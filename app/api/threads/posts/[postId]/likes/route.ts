@@ -21,6 +21,8 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams
     const limit = searchParams.get('limit') || '25'
 
+    console.log(`Fetching likes for post ${postId}`)
+
     const response = await fetch(
       `${THREADS_API_BASE}/${postId}/likes?limit=${limit}`,
       {
@@ -32,7 +34,14 @@ export async function GET(
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}))
-      throw new Error(error.error?.message || 'Failed to fetch likes')
+      console.error('Likes API error:', error)
+      return NextResponse.json(
+        {
+          error: error.error?.message || 'Failed to fetch likes',
+          likes: [],
+        },
+        { status: response.status }
+      )
     }
 
     const data = await response.json()
@@ -47,7 +56,8 @@ export async function GET(
     console.error('Fetch likes error:', error)
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : 'いいねの取得に失敗しました'
+        error: error instanceof Error ? error.message : 'いいねの取得に失敗しました',
+        likes: [],
       },
       { status: 500 }
     )

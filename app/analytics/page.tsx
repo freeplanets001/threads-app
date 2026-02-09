@@ -88,36 +88,25 @@ export default function AnalyticsPage() {
             { headers: getAuthHeaders() }
           )
 
-          if (insightsResponse.ok) {
-            const insightsData = await insightsResponse.json()
-            const insights = insightsData.data || []
+          const insightsData = await insightsResponse.json()
+          const insights = insightsData.data || []
 
-            // 合計値を計算
-            const totalViews = Number(insights.find((i: Insight) => i.name === 'views')?.values[0]?.value || 0)
-            const totalLikes = Number(insights.find((i: Insight) => i.name === 'likes')?.values[0]?.value || post.like_count || 0)
-            const totalComments = Number(insights.find((i: Insight) => i.name === 'comments')?.values[0]?.value || 0)
-            const totalQuotes = Number(insights.find((i: Insight) => i.name === 'quotes')?.values[0]?.value || 0)
+          // 合計値を計算
+          const totalViews = Number(insights.find((i: Insight) => i.name === 'views')?.values[0]?.value || 0)
+          const totalLikes = Number(insights.find((i: Insight) => i.name === 'likes')?.values[0]?.value || post.like_count || 0)
+          const totalComments = Number(insights.find((i: Insight) => i.name === 'comments')?.values[0]?.value || 0)
+          const totalQuotes = Number(insights.find((i: Insight) => i.name === 'quotes')?.values[0]?.value || 0)
 
-            postsWithInsights.push({
-              post,
-              insights,
-              totalViews,
-              totalLikes,
-              totalComments,
-              totalQuotes,
-            })
-          } else {
-            postsWithInsights.push({
-              post,
-              insights: [],
-              totalViews: 0,
-              totalLikes: post.like_count || 0,
-              totalComments: 0,
-              totalQuotes: 0,
-            })
-          }
+          postsWithInsights.push({
+            post,
+            insights,
+            totalViews,
+            totalLikes,
+            totalComments,
+            totalQuotes,
+          })
         } catch (err) {
-          console.error('Failed to load insights for post:', post.id)
+          console.error('Failed to load insights for post:', post.id, err)
           postsWithInsights.push({
             post,
             insights: [],

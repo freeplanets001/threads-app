@@ -13,7 +13,9 @@ async function getUserId(accessToken: string): Promise<string> {
   )
 
   if (!response.ok) {
-    throw new Error('Failed to get user ID')
+    const error = await response.json().catch(() => ({}))
+    console.error('Get user ID error:', error)
+    throw new Error(error.error?.message || 'Failed to get user ID')
   }
 
   const data = await response.json()
@@ -40,7 +42,7 @@ export async function GET(request: NextRequest) {
     const userId = await getUserId(accessToken)
 
     // 投稿一覧を取得
-    const fields = 'id,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,thumbnail_url,children'
+    const fields = 'id,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,thumbnail_url,children,like_count'
     const response = await fetch(
       `${THREADS_API_BASE}/${userId}/threads?fields=${fields}&limit=25`,
       {

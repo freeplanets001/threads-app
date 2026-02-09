@@ -22,6 +22,8 @@ export async function GET(
     const limit = searchParams.get('limit') || '25'
     const fields = searchParams.get('fields') || 'id,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,thumbnail_url'
 
+    console.log(`Fetching replies for post ${postId}`)
+
     const response = await fetch(
       `${THREADS_API_BASE}/${postId}/replies?fields=${fields}&limit=${limit}`,
       {
@@ -33,7 +35,14 @@ export async function GET(
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}))
-      throw new Error(error.error?.message || 'Failed to fetch replies')
+      console.error('Replies API error:', error)
+      return NextResponse.json(
+        {
+          error: error.error?.message || 'Failed to fetch replies',
+          replies: [],
+        },
+        { status: response.status }
+      )
     }
 
     const data = await response.json()
@@ -47,7 +56,8 @@ export async function GET(
     console.error('Fetch replies error:', error)
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : '返信の取得に失敗しました'
+        error: error instanceof Error ? error.message : '返信の取得に失敗しました',
+        replies: [],
       },
       { status: 500 }
     )

@@ -124,12 +124,12 @@ export default function PostsPage() {
       const response = await fetch(`/api/threads/posts/${postId}/likes`, {
         headers: getAuthHeaders(),
       })
-      if (response.ok) {
-        const data = await response.json()
-        setLikes(data.likes || [])
-      }
+      const data = await response.json()
+      // エラーがある場合でもlikes配列は空配列として扱う
+      setLikes(data.likes || [])
     } catch (err) {
       console.error('Failed to load likes:', err)
+      setLikes([])
     } finally {
       setLikesLoading(false)
     }
@@ -141,12 +141,12 @@ export default function PostsPage() {
       const response = await fetch(`/api/threads/posts/${postId}/replies`, {
         headers: getAuthHeaders(),
       })
-      if (response.ok) {
-        const data = await response.json()
-        setReplies(data.replies || [])
-      }
+      const data = await response.json()
+      // エラーがある場合でもreplies配列は空配列として扱う
+      setReplies(data.replies || [])
     } catch (err) {
       console.error('Failed to load replies:', err)
+      setReplies([])
     } finally {
       setRepliesLoading(false)
     }
@@ -169,12 +169,12 @@ export default function PostsPage() {
       const response = await fetch(`/api/threads/posts/${postId}/insights`, {
         headers: getAuthHeaders(),
       })
-      if (response.ok) {
-        const data = await response.json()
-        setInsights(data.data || [])
-      }
+      const data = await response.json()
+      // エラーがある場合でもdata配列は空配列として扱う
+      setInsights(data.data || [])
     } catch (err) {
       console.error('Failed to load insights:', err)
+      setInsights([])
     } finally {
       setInsightsLoading(false)
     }
