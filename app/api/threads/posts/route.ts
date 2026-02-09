@@ -13,9 +13,15 @@ async function getUserId(accessToken: string): Promise<string> {
   )
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    console.error('Get user ID error:', error)
-    throw new Error(error.error?.message || 'Failed to get user ID')
+    const errorText = await response.text()
+    console.error('Get user ID error:', response.status, errorText)
+    let error: { error?: { message?: string } } = {}
+    try {
+      error = JSON.parse(errorText)
+    } catch {
+      // JSON解析失敗時は空オブジェクトを使用
+    }
+    throw new Error(error.error?.message || `Failed to get user ID (${response.status})`)
   }
 
   const data = await response.json()
@@ -53,8 +59,15 @@ export async function GET(request: NextRequest) {
     )
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}))
-      throw new Error(error.error?.message || 'Failed to fetch posts')
+      const errorText = await response.text()
+      console.error('Fetch threads error:', response.status, errorText)
+      let error: { error?: { message?: string } } = {}
+      try {
+        error = JSON.parse(errorText)
+      } catch {
+        // JSON解析失敗時は空オブジェクトを使用
+      }
+      throw new Error(error.error?.message || `Failed to fetch posts (${response.status})`)
     }
 
     const data = await response.json()

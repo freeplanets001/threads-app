@@ -84,18 +84,28 @@ export default function PostsPage() {
       const response = await fetch('/api/threads/posts', {
         headers: getAuthHeaders(),
       })
+
+      // レスポンスボディを先に読み込む
+      const responseText = await response.text()
+      let errorData: { error?: string; posts?: ThreadsPost[] } = {}
+      try {
+        errorData = JSON.parse(responseText)
+      } catch {
+        // JSON解析失敗時は空オブジェクト
+      }
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
         if (response.status === 401) {
           router.push('/settings')
           return
         }
-        throw new Error(errorData.error || 'Failed to load posts')
+        throw new Error(errorData.error || `Failed to load posts (${response.status})`)
       }
 
-      const data = await response.json()
+      const data = typeof errorData === 'object' && 'posts' in errorData ? errorData : JSON.parse(responseText)
       setPosts(data.posts || [])
     } catch (err) {
+      console.error('loadPosts error:', err)
       setError(err instanceof Error ? err.message : '投稿の読み込みに失敗しました')
     } finally {
       setLoading(false)
@@ -326,8 +336,26 @@ export default function PostsPage() {
         )}
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg">
-            {error}
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-red-500 text-xl">⚠️</span>
+              <p className="font-semibold text-red-900">エラーが発生しました</p>
+            </div>
+            <p className="text-red-700 text-sm mb-3">{error}</p>
+            <div className="flex gap-2">
+              <button
+                onClick={loadPosts}
+                className="px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
+              >
+                再試行
+              </button>
+              <button
+                onClick={() => router.push('/settings')}
+                className="px-3 py-1.5 bg-white text-red-600 text-sm rounded-lg border border-red-300 hover:bg-red-50 transition-colors"
+              >
+                設定を確認
+              </button>
+            </div>
           </div>
         )}
 
