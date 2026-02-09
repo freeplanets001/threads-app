@@ -5,7 +5,6 @@ import Link from 'next/link'
 
 export default function Home() {
   const [isConfigured, setIsConfigured] = useState(false)
-  const [username, setUsername] = useState('')
 
   useEffect(() => {
     // 設定がされているか確認
@@ -13,9 +12,6 @@ export default function Home() {
     if (settings) {
       const parsed = JSON.parse(settings)
       setIsConfigured(!!parsed.threadsAccessToken)
-      if (parsed.threadsUserId) {
-        setUsername('設定済み')
-      }
     }
   }, [])
 
@@ -103,15 +99,18 @@ export default function Home() {
           </Link>
 
           {/* アナリティクス */}
-          <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 opacity-60">
+          <Link
+            href="/analytics"
+            className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow p-6 border border-gray-100 group"
+          >
             <div className="text-4xl mb-4">📊</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-purple-600 transition-colors">
               アナリティクス
             </h3>
             <p className="text-gray-600 text-sm">
-              まもなく公開...
+              投稿のインサイトや統計情報を確認
             </p>
-          </div>
+          </Link>
 
           {/* スケジュール */}
           <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 opacity-60">
