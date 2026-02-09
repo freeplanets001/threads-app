@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 interface ThreadsPost {
   id: string
@@ -271,6 +272,16 @@ export default function PostsPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
+        {/* ナビゲーション */}
+        <div className="mb-4">
+          <Link
+            href="/"
+            className="text-purple-600 hover:text-purple-700 flex items-center gap-1"
+          >
+            ← ホームに戻る
+          </Link>
+        </div>
+
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">投稿管理</h1>

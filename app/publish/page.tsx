@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function PublishPage() {
   const router = useRouter()
@@ -160,6 +161,16 @@ export default function PublishPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
+        {/* ナビゲーション */}
+        <div className="mb-4">
+          <Link
+            href="/"
+            className="text-purple-600 hover:text-purple-700 flex items-center gap-1"
+          >
+            ← ホームに戻る
+          </Link>
+        </div>
+
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">新規投稿</h1>
           <p className="text-gray-600 mt-1">Threadsに新しい投稿を作成します</p>

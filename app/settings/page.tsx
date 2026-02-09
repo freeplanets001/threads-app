@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 
 interface Settings {
   threadsAccessToken: string
@@ -74,6 +75,24 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
+        {/* ナビゲーション */}
+        <div className="mb-6 flex items-center justify-between">
+          <Link
+            href="/"
+            className="text-purple-600 hover:text-purple-700 flex items-center gap-1"
+          >
+            ← ホームに戻る
+          </Link>
+          {settings.threadsAccessToken && (
+            <Link
+              href="/profile"
+              className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm"
+            >
+              プロフィールを見る
+            </Link>
+          )}
+        </div>
+
         <div className="bg-white shadow-lg rounded-lg overflow-hidden">
           <div className="bg-gradient-to-r from-purple-600 to-blue-500 px-6 py-4">
             <h1 className="text-2xl font-bold text-white">Threads API 設定</h1>
