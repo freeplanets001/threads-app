@@ -14,11 +14,6 @@ interface ThreadsPost {
   like_count?: number
 }
 
-interface ThreadsUser {
-  id: string
-  username: string
-}
-
 interface Like {
   id: string
   username: string
@@ -29,6 +24,11 @@ interface Reply {
   text?: string
   username: string
   timestamp: string
+}
+
+interface Insight {
+  name: string
+  values: [{ value: string }]
 }
 
 export default function PostsPage() {
@@ -47,7 +47,9 @@ export default function PostsPage() {
   const [replies, setReplies] = useState<Reply[]>([])
   const [likesLoading, setLikesLoading] = useState(false)
   const [repliesLoading, setRepliesLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'details' | 'likes' | 'replies'>('details')
+  const [activeTab, setActiveTab] = useState<'details' | 'likes' | 'replies' | 'insights'>('details')
+  const [insights, setInsights] = useState<Insight[]>([])
+  const [insightsLoading, setInsightsLoading] = useState(false)
   const [quota, setQuota] = useState<any>(null)
 
   useEffect(() => {
@@ -154,9 +156,27 @@ export default function PostsPage() {
     setActiveTab('details')
     setLikes([])
     setReplies([])
+    setInsights([])
     // 自動的にいいねと返信を読み込む
     loadLikes(post.id)
     loadReplies(post.id)
+  }
+
+  const loadInsights = async (postId: string) => {
+    setInsightsLoading(true)
+    try {
+      const response = await fetch(`/api/threads/posts/${postId}/insights`, {
+        headers: getAuthHeaders(),
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setInsights(data.data || [])
+      }
+    } catch (err) {
+      console.error('Failed to load insights:', err)
+    } finally {
+      setInsightsLoading(false)
+    }
   }
 
   const handleDelete = async (postId: string) => {
@@ -234,6 +254,17 @@ export default function PostsPage() {
       case 'CAROUSEL': return '🎠'
       case 'TEXT': return '📝'
       default: return '📄'
+    }
+  }
+
+  const getInsightLabel = (name: string) => {
+    switch (name) {
+      case 'views': return '👁️ 閲覧数'
+      case 'likes': return '❤️ いいね'
+      case 'comments': return '💬 コメント'
+      case 'quotes': return '🔄 引用'
+      case 'replies': return '↩️ 返信'
+      default: return name
     }
   }
 
@@ -393,6 +424,19 @@ export default function PostsPage() {
                   >
                     返信 {replies.length > 0 && `(${replies.length})`}
                   </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab('insights')
+                      if (insights.length === 0) loadInsights(selectedPost.id)
+                    }}
+                    className={`px-4 py-3 font-medium text-sm ${
+                      activeTab === 'insights'
+                        ? 'border-b-2 border-purple-500 text-purple-600'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    インサイト
+                  </button>
                 </div>
 
                 <div className="p-4">
@@ -541,6 +585,44 @@ export default function PostsPage() {
                       )}
                       <button
                         onClick={() => loadReplies(selectedPost.id)}
+                        className="mt-3 w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                      >
+                        更新
+                      </button>
+                    </div>
+                  )}
+
+                  {/* インサイトタブ */}
+                  {activeTab === 'insights' && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3">インサイト</h3>
+                      {insightsLoading ? (
+                        <div className="text-center py-4 text-gray-500">
+                          読み込み中...
+                        </div>
+                      ) : insights.length === 0 ? (
+                        <div className="text-center py-4 text-gray-500">
+                          インサイトデータがありません
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {insights.map((insight, index) => (
+                            <div
+                              key={index}
+                              className="p-3 bg-gray-50 rounded-lg flex justify-between items-center"
+                            >
+                              <span className="text-sm text-gray-700 capitalize">
+                                {getInsightLabel(insight.name)}
+                              </span>
+                              <span className="font-semibold text-purple-600">
+                                {insight.values[0]?.value || '0'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <button
+                        onClick={() => loadInsights(selectedPost.id)}
                         className="mt-3 w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
                       >
                         更新

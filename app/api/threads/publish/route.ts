@@ -40,13 +40,13 @@ async function createContainer(
       image_url: url,
     }))
 
-    const body = {
+    const body: Record<string, any> = {
       media_type: mediaType,
       children,
     }
 
     if (text) {
-      body['text'] = text
+      body.text = text
     }
 
     const response = await fetch(url.toString(), {
