@@ -24,13 +24,48 @@ async function getUserId(accessToken: string): Promise<string> {
 async function createContainer(
   userId: string,
   accessToken: string,
-  mediaType: 'TEXT' | 'IMAGE' | 'VIDEO',
+  mediaType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'CAROUSEL',
   text?: string,
   imageUrl?: string,
-  videoUrl?: string
+  videoUrl?: string,
+  imageUrls?: string[]
 ): Promise<string> {
   const url = new URL(`${THREADS_API_BASE}/${userId}/threads`)
   url.searchParams.append('media_type', mediaType)
+
+  if (mediaType === 'CAROUSEL' && imageUrls && imageUrls.length > 0) {
+    // カルーセル投稿
+    const children = imageUrls.map(url => ({
+      media_type: 'IMAGE',
+      image_url: url,
+    }))
+
+    const body = {
+      media_type: mediaType,
+      children,
+    }
+
+    if (text) {
+      body['text'] = text
+    }
+
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}))
+      throw new Error(error.error?.message || 'Failed to create carousel container')
+    }
+
+    const data = await response.json()
+    return data.id
+  }
 
   if (text) {
     url.searchParams.append('text', text)
@@ -48,7 +83,6 @@ async function createContainer(
       'Authorization': `Bearer ${accessToken}`,
     },
   })
-
   if (!response.ok) {
     const error = await response.json().catch(() => ({}))
     throw new Error(error.error?.message || 'Failed to create container')
@@ -84,7 +118,7 @@ async function publishContainer(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { text, imageUrl, videoUrl, mediaType } = body
+    const { text, imageUrl, videoUrl, mediaType, imageUrls } = body
 
     // クライアントから送信されたアクセストークンを取得
     const authHeader = request.headers.get('authorization')
@@ -107,7 +141,8 @@ export async function POST(request: NextRequest) {
       mediaType,
       text,
       imageUrl,
-      videoUrl
+      videoUrl,
+      imageUrls
     )
 
     // コンテナを公開

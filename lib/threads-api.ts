@@ -9,7 +9,7 @@ export interface ThreadsPost {
   id: string
   media_product_type: string
   media_type: string
-  media_url: string
+  media_url?: string
   permalink: string
   owner: {
     id: string
@@ -19,12 +19,58 @@ export interface ThreadsPost {
   text?: string
   timestamp: string
   thumbnail_url?: string
+  is_quote_post?: boolean
   children?: {
     data: ThreadsPost[]
+    paging?: {
+      next?: string
+      previous?: string
+    }
   }
   replies?: {
     data: ThreadsPost[]
+    paging?: {
+      next?: string
+      previous?: string
+    }
   }
+  like_count?: number
+}
+
+export interface ThreadsUser {
+  id: string
+  username: string
+  threads_profile_picture_url?: string
+  threads_biography?: string
+  hometile_url?: string
+  follower_count?: number
+  following_count?: number
+  is_private?: boolean
+}
+
+export interface ThreadsContainerResponse {
+  id: string
+  status: string
+}
+
+export interface ThreadsPublishResponse {
+  id: string
+}
+
+export interface ThreadsLimit {
+  config: {
+    threads_post_cap_quota: number
+    threads_video_post_cap_quota: number
+  }
+  quota_usage: {
+    threads_post_cap_quota: number
+    threads_video_post_cap_quota: number
+  }
+}
+
+export interface ThreadsConfig {
+  accessToken: string
+  userId?: string
 }
 
 export interface ThreadsUser {
@@ -295,6 +341,203 @@ export class ThreadsAPI {
     if (!response.ok) {
       const error = await response.json().catch(() => ({}))
       throw new Error(error.error?.message || 'Failed to fetch likes')
+    }
+
+    return response.json()
+  }
+
+  /**
+   * 投稿に対する返信一覧を取得
+   */
+  async getReplies(postId: string, fields: string = 'id,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,thumbnail_url', limit: number = 25): Promise<ThreadsPost[]> {
+    const response = await fetch(
+      `${THREADS_API_BASE}/${postId}/replies?fields=${fields}&limit=${limit}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+        },
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}))
+      throw new Error(error.error?.message || 'Failed to fetch replies')
+    }
+
+    const data = await response.json()
+    return data.data || []
+  }
+
+  /**
+   * 複数ユーザーの情報を取得
+   */
+  async getUsers(userIds: string[], fields: string = 'id,username,threads_profile_picture_url,threads_biography'): Promise<ThreadsUser[]> {
+    const response = await fetch(
+      `${THREADS_API_BASE}/?ids=${userIds.join(',')}&fields=${fields}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+        },
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}))
+      throw new Error(error.error?.message || 'Failed to fetch users')
+    }
+
+    const data = await response.json()
+    return data.data || []
+  }
+
+  /**
+   * ユーザーIDからユーザー情報を取得
+   */
+  async getUserById(userId: string, fields: string = 'id,username,threads_profile_picture_url,threads_biography,hometile_url,follower_count'): Promise<ThreadsUser> {
+    const response = await fetch(
+      `${THREADS_API_BASE}/${userId}?fields=${fields}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+        },
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}))
+      throw new Error(error.error?.message || 'Failed to fetch user')
+    }
+
+    return response.json()
+  }
+
+  /**
+   * 投稿制限を確認
+   */
+  async getContainerLimit(): Promise<ThreadsLimit> {
+    const response = await fetch(
+      `${THREADS_API_BASE}/me/threads/config`,
+      {
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+        },
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}))
+      throw new Error(error.error?.message || 'Failed to fetch limits')
+    }
+
+    return response.json()
+  }
+
+  /**
+   * カルーセル投稿を作成（複数画像）
+   */
+  async createCarouselContainer(imageUrls: string[], text?: string): Promise<string> {
+    const children = imageUrls.map(url => ({
+      media_type: 'IMAGE',
+      image_url: url,
+    }))
+
+    const url = new URL(`${THREADS_API_BASE}/${this.userId}/threads`)
+    url.searchParams.append('media_type', 'CAROUSEL')
+    url.searchParams.append('children', JSON.stringify(children))
+    if (text) {
+      url.searchParams.append('text', text)
+    }
+
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        media_type: 'CAROUSEL',
+        children,
+        text,
+      }),
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}))
+      throw new Error(error.error?.message || 'Failed to create carousel container')
+    }
+
+    const data = await response.json()
+    return data.id
+  }
+
+  /**
+   * カルーセル投稿を作成して公開
+   */
+  async publishCarousel(imageUrls: string[], text?: string): Promise<ThreadsPublishResponse> {
+    const containerId = await this.createCarouselContainer(imageUrls, text)
+    return this.publishContainer(containerId)
+  }
+
+  /**
+   * 特定ユーザーの投稿を取得
+   */
+  async getUserPostsById(userId: string, fields: string = 'id,media_product_type,media_type,media_url,permalink,owner,username,text,timestamp,thumbnail_url', limit: number = 25): Promise<ThreadsPost[]> {
+    const url = new URL(`${THREADS_API_BASE}/${userId}/threads`)
+    url.searchParams.append('fields', fields)
+    url.searchParams.append('limit', limit.toString())
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        'Authorization': `Bearer ${this.accessToken}`,
+      },
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}))
+      throw new Error(error.error?.message || 'Failed to fetch user posts')
+    }
+
+    const data = await response.json()
+    return data.data || []
+  }
+
+  /**
+   * 投稿のinsights（分析データ）を取得
+   */
+  async getInsights(postId: string, metrics: string = 'views,likes,comments,quotes'): Promise<any> {
+    const response = await fetch(
+      `${THREADS_API_BASE}/${postId}/insights?metric=${metrics}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+        },
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}))
+      throw new Error(error.error?.message || 'Failed to fetch insights')
+    }
+
+    return response.json()
+  }
+
+  /**
+   * コンテナのステータスを確認
+   */
+  async getContainerStatus(containerId: string): Promise<ThreadsContainerResponse> {
+    const response = await fetch(
+      `${THREADS_API_BASE}/${containerId}?fields=status`,
+      {
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+        },
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}))
+      throw new Error(error.error?.message || 'Failed to fetch container status')
     }
 
     return response.json()
