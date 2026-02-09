@@ -4,9 +4,10 @@ const THREADS_API_BASE = 'https://graph.threads.net/v1.0'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { postId: string } }
+  { params }: { params: Promise<{ postId: string }> }
 ) {
   try {
+    const { postId } = await params
     const authHeader = request.headers.get('authorization')
     const accessToken = authHeader?.replace('Bearer ', '')
 
@@ -16,8 +17,6 @@ export async function DELETE(
         { status: 401 }
       )
     }
-
-    const postId = params.postId
 
     // Threads APIで投稿を削除
     const response = await fetch(`${THREADS_API_BASE}/${postId}`, {
